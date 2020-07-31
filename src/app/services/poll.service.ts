@@ -3,7 +3,7 @@ import { Observable, of } from "rxjs";
 import { delay } from "rxjs/operators";
 import { Poll, PollForm } from "../types";
 import { Web3Service } from "../blockchain/web3.service";
-import { fromAscii } from "web3-utils";
+import { fromAscii, toAscii } from "web3-utils";
 
 @Injectable({
   providedIn: "root",
@@ -11,25 +11,20 @@ import { fromAscii } from "web3-utils";
 export class PollService {
   constructor(private web3: Web3Service) {}
 
-  getPolls(): Observable<Poll[]> {
-    return of([
-      {
-        id: 1,
-        question: "Do you like dogs or cats?",
-        results: [2, 5, 7],
-        thumbnail: "http://lorempixel.com/g/1200/600/",
-        options: ["Cats", "Dogs", "None"],
-        voted: true,
-      },
-      {
-        id: 2,
-        question: "Best month for summer holidays?",
-        results: [1, 6, 4],
-        thumbnail: "http://lorempixel.com/g/1200/600/",
-        options: ["June", "July", "August"],
-        voted: false,
-      },
-    ]).pipe(delay(2000));
+  async getPolls(): Promise<Poll[]> {
+    const polls: Poll[] = [];
+    const totalPolls = await this.web3.call("getTotalPolls");
+    const account = await this.web3.getAccount();
+    const voter = await this.web3.call("getVoter", account);
+    const voterNormalized = this.normalizeVoter(voter);
+
+    for (let i = 0; i < totalPolls; i++) {
+      const pollRaw = await this.web3.call("getPoll", i);
+      const pollNormalized = this.normalizePoll(pollRaw, voterNormalized);
+      polls.push(pollNormalized);
+    }
+
+    return polls;
   }
 
   vote(pollId: number, voteNumber: number) {
@@ -43,5 +38,32 @@ export class PollService {
       poll.thumbnail || "",
       poll.options.map((option) => fromAscii(option))
     );
+  }
+
+  private normalizeVoter(voter) {
+    return {
+      id: voter[0],
+      votedIds: voter[1].map((vote) => parseInt(vote)),
+    };
+  }
+
+  private normalizePoll(pollRaw, voter): Poll {
+    return {
+      id: parseInt(pollRaw[0]),
+      question: pollRaw[1],
+      thumbnail: pollRaw[2],
+      results: pollRaw[3].map((vote) => parseInt(vote)),
+      options: pollRaw[4].map((option) =>
+        toAscii(option).replace(/\u0000/g, "")
+      ),
+      voted:
+        voter.votedIds.length &&
+        voter.votedIds.find((votedId) => votedId === parseInt(pollRaw[0])) !=
+          undefined,
+    };
+  }
+
+  onEvent(name: string) {
+    return this.web3.onEvents(name);
   }
 }

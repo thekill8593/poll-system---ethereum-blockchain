@@ -1,4 +1,4 @@
-# Blockchain Ethereum Poll
+# Poll system with Ethereum
 
 ## How to run
 

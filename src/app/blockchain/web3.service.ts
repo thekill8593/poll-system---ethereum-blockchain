@@ -22,9 +22,17 @@ export class Web3Service {
       );
 
       window.ethereum.enable().catch((err) => console.error(err));
-      )
     } else {
       console.warn("Metamask not found, Install or Enable metamask");
     }
+  }
+
+  getAccount(): Promise<string> {
+    return this.web3.eth.getAccounts().then((accounts) => accounts[0] || "");
+  }
+
+  async executeTransaction(fnName: string, ...args: any): Promise<void> {
+    const account = await this.getAccount();
+    return this.contract.methods[fnName](...args).send({ from: account });
   }
 }

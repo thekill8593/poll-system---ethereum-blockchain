@@ -1,14 +1,19 @@
-import { Component, OnInit, Output, EventEmitter } from "@angular/core";
+import { Component, OnInit, Output, EventEmitter, Input } from "@angular/core";
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { PollForm } from "src/app/types";
+import { Subscription, Observable } from "rxjs";
 
 @Component({
   selector: "app-poll-create",
   templateUrl: "./poll-create.component.html",
   styleUrls: ["./poll-create.component.scss"],
 })
-export class PollCreateComponent {
+export class PollCreateComponent implements OnInit {
   pollForm: FormGroup;
+
+  private eventsSubscription: Subscription;
+
+  @Input() events: Observable<void>;
 
   @Output() pollCreated: EventEmitter<PollForm> = new EventEmitter();
 
@@ -36,6 +41,13 @@ export class PollCreateComponent {
     this.pollCreated.emit(formData);
   }
 
-  // ngOnInit() {
-  // }
+  ngOnInit() {
+    this.eventsSubscription = this.events.subscribe((e) => {
+      this.pollForm.reset();
+    });
+  }
+
+  ngOnDestroy() {
+    this.eventsSubscription.unsubscribe();
+  }
 }

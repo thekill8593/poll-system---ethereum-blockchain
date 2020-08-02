@@ -28,11 +28,11 @@ export class PollService {
   }
 
   vote(pollId: number, voteNumber: number) {
-    this.web3.executeTransaction("vote", pollId, voteNumber);
+    return this.web3.executeTransaction("vote", pollId, voteNumber);
   }
 
   createPoll(poll: PollForm) {
-    this.web3.executeTransaction(
+    return this.web3.executeTransaction(
       "createPoll",
       poll.question,
       poll.thumbnail || "",

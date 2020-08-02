@@ -10,7 +10,8 @@
   <p class="lead text-muted">Powered by blockchain</p>
 </section>
 
-<app-poll-create *ngIf="showForm" (pollCreated)="handlePollCreate($event)"></app-poll-create>
+<app-poll-create *ngIf="showForm" (pollCreated)="handlePollCreate($event)" [events]="pollCreationEvent.asObservable()">
+</app-poll-create>
 
 <div>
   <div class="d-flex">
